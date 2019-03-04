@@ -7,6 +7,7 @@ from helpers import Bosses, diffValue2txt
 from utils import randGaussBounds, getRangeDict, chooseFromRange
 from graph import AccessGraph
 from graph_access import accessPoints
+from graph_locations import locations as graphLocations
 from smboolmanager import SMBoolManager
 from vcr import VCR
 import log, logging
@@ -35,7 +36,8 @@ class RandoSettings(object):
     # of the relevant categorie(s). This can easily cause aborted seeds, so some basic checks will be performed
     # beforehand to know whether an item can indeed be removed.
     # runtimeLimit_s : maximum runtime limit in seconds for generateItems functions. If <= 0, will be unlimited.
-    def __init__(self, maxDiff, progSpeed, progDiff, qty, restrictions, superFun, runtimeLimit_s, vcr):
+    # plando : list of item location pairs to prefill
+    def __init__(self, maxDiff, progSpeed, progDiff, qty, restrictions, superFun, runtimeLimit_s, vcr, plando):
         self.progSpeed = progSpeed
         self.progDiff = progDiff
         self.maxDiff = maxDiff
@@ -46,6 +48,16 @@ class RandoSettings(object):
         if self.runtimeLimit_s <= 0:
             self.runtimeLimit_s = sys.maxint
         self.vcr = vcr
+        self.plando = []
+        def getLoc(locName):
+            for loc in graphLocations:
+                if loc["Name"] == locName:
+                    return loc
+        for il in plando:
+            # itemLocation parameters will be simpler-to-type, retrieve proper objects for later
+            parts = il.split(':')
+            self.plando.append({'Item' : ItemManager.getItem(parts[0]),
+                                'Location' : getLoc(parts[1])})
 
     def getChooseLocs(self):
         return self.getChooseLocDict(self.progDiff)
@@ -1348,6 +1360,13 @@ class Randomizer(object):
         if isChozo:
             self.itemPool = self.chozoItemPool
 
+    # fill locations with items that are planned, do this before all else
+    def fillPlandoItems(self):
+        for itemLocation in self.settings.plando:
+            # { Item, Location }
+            self.log.debug("Planned fill: {} at {}".format(itemLocation['Item']['Type'], itemLocation['Location']['Name']))
+            self.getItem(itemLocation)
+
     def getCurrentState(self):
         return self.states[-1]
 
@@ -1457,6 +1476,7 @@ class Randomizer(object):
         self.curAccessPoints = self.currentAccessPoints()
         self.hadChozoLeft = self.isChozoLeft()
         self.initState = RandoState(self, self.currentLocations())
+        self.fillPlandoItems()
         self.log.debug("{} items in pool".format(len(self.itemPool)))
         runtime_s = 0
         startDate = time.clock()

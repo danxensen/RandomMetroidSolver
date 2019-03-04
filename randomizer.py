@@ -143,6 +143,7 @@ if __name__ == "__main__":
     parser.add_argument('--race', help="Race mode magic number, between 1 and 65535", dest='raceMagic',
                         type=int)
     parser.add_argument('--vcr', help="Generate VCR output file", dest='vcr', action='store_true')
+    parser.add_argument('--plando', '-l', help="Specify the locations of particular items as ItemType:LocationName pairs", dest='plando', nargs='?', default=[], action='append')
 
     # parse args
     args = parser.parse_args()
@@ -352,7 +353,7 @@ if __name__ == "__main__":
             else:
                 raise ValueError("Invalid button name : " + str(b))
 
-    randoSettings = RandoSettings(maxDifficulty, progSpeed, progDiff, qty, restrictions, args.superFun, args.runtimeLimit_s, args.vcr)
+    randoSettings = RandoSettings(maxDifficulty, progSpeed, progDiff, qty, restrictions, args.superFun, args.runtimeLimit_s, args.vcr, args.plando)
     bossTransitions = vanillaBossesTransitions
     if args.bosses == True:
         bossTransitions = getRandomBossTransitions()
